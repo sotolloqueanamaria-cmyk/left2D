@@ -2,7 +2,11 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#08080a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Left 4 Dead 2D — Bloodline Survival</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
@@ -359,9 +363,108 @@
     }
     @media(prefers-reduced-motion:reduce) { #main-menu.menu-ultimate *,#main-menu.menu-ultimate::before { animation:none!important; transition:none!important; } }
 
+
+    /* =====================================================================
+       [MÓVIL] Capa de adaptación táctil. Todo lo nuevo cuelga de body.touch-mode
+       o de media queries; en PC con ratón no cambia nada del aspecto original.
+       ===================================================================== */
+    html, body { height: 100%; overscroll-behavior: none; }
+    body {
+      position: fixed; inset: 0; width: 100%;
+      -webkit-user-select: none; -webkit-touch-callout: none; -webkit-text-size-adjust: 100%;
+    }
+    #canvas-container { width: 100%; height: var(--app-h, 100vh); touch-action: manipulation; }
+    @supports (height: 100dvh) { #canvas-container { height: 100dvh; } }
+    #gameCanvas { touch-action: none; }
+    /* El filtro CSS sobre el canvas completo es caro en GPUs móviles: se desactiva en táctil y en calidad baja. */
+    body.touch-mode #gameCanvas, body.q-low #gameCanvas { filter: none; }
+    .touch-only { display: none; }
+    body.touch-mode .touch-only { display: list-item; }
+
+    /* ---- Controles táctiles ---- */
+    #touch-ui { display: none; position: absolute; inset: 0; z-index: 40; pointer-events: none; touch-action: none; --jr: 58px; --ui: 1; }
+    body.touch-mode #touch-ui.show { display: block; }
+    .tzone { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 50px); bottom: 0; width: 46%; pointer-events: auto; touch-action: none; z-index: 1; }
+    #tz-move { left: 0; }
+    #tz-aim { right: 0; }
+    .joy {
+      position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; will-change: transform;
+      width: calc(var(--jr) * 2); height: calc(var(--jr) * 2); border-radius: 50%;
+      border: 3px solid rgba(255,255,255,.78); box-shadow: 0 0 0 3px rgba(230,0,18,.55);
+      background: radial-gradient(circle, rgba(230,0,18,.20) 0%, rgba(8,8,10,.50) 70%);
+      opacity: .95;
+    }
+    .joy.idle { opacity: .30; }
+    .joy-knob { position: absolute; left: 50%; top: 50%; width: 46%; height: 46%; margin: -23% 0 0 -23%; border-radius: 50%; background: var(--p-white); border: 3px solid var(--p-red); will-change: transform; }
+    #joy-aim .joy-knob { background: var(--p-yellow); }
+    #joy-aim.firing { box-shadow: 0 0 0 3px rgba(255,215,0,.9), 0 0 18px rgba(230,0,18,.8); }
+
+    .tbtn {
+      position: absolute; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      padding: 0; margin: 0; color: #fff; background: rgba(8,8,10,.80); border: 2px solid #fff; border-radius: 0;
+      box-shadow: 3px 3px 0 var(--p-red); transform: translate(-50%, -50%) skew(-8deg);
+      pointer-events: auto; touch-action: none; cursor: pointer;
+      font: 700 8px/1 'Share Tech Mono', monospace; letter-spacing: .05em; -webkit-tap-highlight-color: transparent;
+    }
+    .tbtn svg { width: 44%; height: 44%; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transform: skew(8deg); pointer-events: none; }
+    .tbtn .tl { transform: skew(8deg); pointer-events: none; white-space: nowrap; }
+    .tbtn.down { background: var(--p-yellow); color: #08080a; border-color: #08080a; }
+    .tbtn.off { opacity: .38; }
+    .tbtn.on { background: #14532d; border-color: #86efac; }
+    .tbtn.ready { background: var(--p-red); animation: tbtn-pulse .7s steps(2, end) infinite; }
+    .tbtn.hidden-btn { display: none; }
+    .tb-badge { position: absolute; right: -8px; top: -8px; min-width: 18px; height: 18px; padding: 0 3px; box-sizing: border-box; display: grid; place-items: center; background: var(--p-red); color: #fff; border: 2px solid #fff; font: 700 10px/1 'Share Tech Mono', monospace; transform: skew(8deg); pointer-events: none; }
+    @keyframes tbtn-pulse { 50% { background: var(--p-yellow); color: #08080a; } }
+
+    .ttop { position: absolute; z-index: 3; display: flex; gap: 8px; top: calc(env(safe-area-inset-top, 0px) + 6px); right: calc(env(safe-area-inset-right, 0px) + 10px); pointer-events: none; }
+    .ttop .tsmall { position: static; transform: skew(-8deg); width: 40px; height: 40px; pointer-events: auto; }
+    #touch-weapon { position: absolute; z-index: 2; pointer-events: none; text-align: right; top: calc(env(safe-area-inset-top, 0px) + 52px); right: calc(env(safe-area-inset-right, 0px) + 12px); text-shadow: 0 0 4px #000, 0 0 8px #000; }
+    #touch-weapon .tw-name { font: 400 1.05rem/1 'Bebas Neue', Impact, sans-serif; letter-spacing: 2px; color: var(--p-yellow); }
+    #touch-weapon .tw-ammo { font: 700 1.05rem/1.15 'Share Tech Mono', monospace; color: #fff; }
+    #touch-weapon .tw-ammo.ammo-critical { color: #ff4545; animation: ammo-pulse .7s steps(2, end) infinite; }
+
+    /* ---- HUD reorganizado en móvil: vida arriba al centro, estado arriba a la izquierda ---- */
+    body.touch-mode #game-hud { padding: calc(env(safe-area-inset-top, 0px) + 6px) calc(env(safe-area-inset-right, 0px) + 10px) 0 calc(env(safe-area-inset-left, 0px) + 10px); }
+    body.touch-mode #game-hud > div:first-child > .persona-hud-card:nth-child(2) { display: none; }
+    body.touch-mode #game-hud > div:first-child > .persona-hud-card { padding: .25rem .7rem; box-shadow: 4px 4px 0 var(--p-red); border-width: 2px; }
+    body.touch-mode #game-hud > div:first-child .text-xs:first-child { display: none; }
+    body.touch-mode #game-hud #wave-display { font-size: 1.35rem; line-height: 1.05; }
+    body.touch-mode #game-hud .text-xs { font-size: .62rem; line-height: 1.2; }
+    body.touch-mode #game-hud > div:nth-child(2) { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 6px); left: 50%; transform: translateX(-50%); width: auto; }
+    body.touch-mode #game-hud > div:nth-child(2) .persona-hud-card { width: min(15rem, 34vw); padding: .3rem .7rem; box-shadow: 4px 4px 0 var(--p-red); border-width: 2px; }
+    body.touch-mode #game-hud > div:nth-child(2) .persona-hud-card .mt-2 { display: none; }
+    body.touch-mode #game-hud #hp-text { font-size: .95rem; }
+    body.touch-mode #game-hud > div:nth-child(2) .h-5 { height: .8rem; border-width: 2px; }
+    body.touch-mode .right-sidebar { display: none; }
+
+    /* ---- Aviso de orientación ---- */
+    #rotate-hint { z-index: 70; }
+    #rotate-hint .rot-icon { font-size: 3rem; line-height: 1; display: inline-block; animation: rot-spin 2.4s ease-in-out infinite; }
+    @keyframes rot-spin { 0%, 20% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+
+    /* ---- Pantallas bajas (móvil en horizontal): menú y modales con scroll interno ---- */
+    @media (max-height: 520px) {
+      .persona-card { max-height: calc(var(--app-h, 100vh) - 14px); overflow-y: auto; padding: .9rem 1.4rem; touch-action: pan-y; }
+      .persona-card h2 { font-size: 2.6rem !important; margin-bottom: .4rem !important; }
+      .persona-card h3 { font-size: 1.9rem !important; margin-bottom: .5rem !important; }
+      .persona-card ul { margin-bottom: .8rem !important; }
+      .persona-btn { font-size: 1.55rem; margin: .35rem 0; padding: .2rem 1.2rem; }
+    }
+    @media (max-height: 520px) and (orientation: landscape) {
+      #main-menu.menu-ultimate { overflow-y: auto; justify-content: flex-start; touch-action: pan-y; }
+      #main-menu .menu-layout { padding: 40px 0 28px; gap: 1.2rem; min-height: auto; margin: auto; }
+      .menu-main-title, .menu-title-ghost { font-size: clamp(2.8rem, 15vh, 5.2rem); }
+      .menu-subtitle { margin: .5rem 0 .6rem; font-size: 1.05rem; }
+      .menu-tagline, .menu-warning, .menu-side-label, .menu-crosshair, .menu-bottomline, .menu-command-footer { display: none; }
+      .menu-command { padding: 1rem 1.2rem; }
+      #main-menu .menu-action { min-height: 54px; margin: 8px 0; }
+      .menu-topline { top: 8px; font-size: 8px; }
+    }
+    @media (max-width: 620px) { #main-menu.menu-ultimate { touch-action: pan-y; } }
   </style>
 </head>
 <body>
+  <div id="safe-probe" aria-hidden="true" style="position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)"></div>
 
   <div id="canvas-container">
     <canvas id="gameCanvas"></canvas>
@@ -472,6 +575,46 @@
 
     </div>
 
+    <!-- [MÓVIL] CONTROLES TÁCTILES (solo visibles con body.touch-mode durante la partida) -->
+    <div id="touch-ui" aria-hidden="true">
+      <div id="tz-move" class="tzone"></div>
+      <div id="tz-aim" class="tzone"></div>
+      <div id="joy-move" class="joy idle"><div class="joy-knob"></div></div>
+      <div id="joy-aim" class="joy idle"><div class="joy-knob"></div></div>
+
+      <div id="touch-weapon"><div class="tw-name" id="tw-name">ESCOPETA</div><div class="tw-ammo" id="tw-ammo">8 / 32</div></div>
+
+      <div class="ttop">
+        <button type="button" class="tbtn tsmall" id="tb-fs" aria-label="Pantalla completa"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+        <button type="button" class="tbtn tsmall" id="tb-music" aria-label="Música"><svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="16" r="2"/></svg></button>
+        <button type="button" class="tbtn tsmall" id="tb-pause" aria-label="Pausa"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+      </div>
+
+      <!-- Grupo derecho (junto al stick de apuntado): combate -->
+      <button type="button" class="tbtn" id="tb-sprint" data-act="sprint"><svg viewBox="0 0 24 24"><path d="M5 6l6 6-6 6M12 6l6 6-6 6"/></svg><span class="tl">SPRINT</span></button>
+      <button type="button" class="tbtn" id="tb-shove" data-act="shove"><svg viewBox="0 0 24 24"><path d="M4 12h9M10 7l5 5-5 5M19 5v14"/></svg><span class="tl">EMPUJAR</span></button>
+      <button type="button" class="tbtn" id="tb-reload" data-act="reload"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span class="tl">RECARGA</span></button>
+      <button type="button" class="tbtn" id="tb-swap" data-act="swap"><svg viewBox="0 0 24 24"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg><span class="tl">ARMA</span></button>
+      <button type="button" class="tbtn" id="tb-frenzy" data-act="frenzy"><svg viewBox="0 0 24 24"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg><span class="tl" id="tl-frenzy">FRENESÍ</span></button>
+
+      <!-- Grupo izquierdo (junto al stick de movimiento): utilidades -->
+      <button type="button" class="tbtn" id="tb-throw" data-act="throw"><svg viewBox="0 0 24 24"><circle cx="11" cy="14" r="6"/><path d="M15 9l3-3M18 4l2 1"/></svg><span class="tl" id="tl-throw">LANZAR</span><span class="tb-badge" id="tb-throw-n">0</span></button>
+      <button type="button" class="tbtn" id="tb-heal" data-act="heal"><svg viewBox="0 0 24 24"><path d="M12 4v16M4 12h16" style="stroke-width:3.4"/></svg><span class="tl">CURAR</span><span class="tb-badge" id="tb-heal-n">1</span></button>
+      <button type="button" class="tbtn hidden-btn" id="tb-pickup" data-act="pickup"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg><span class="tl">RECOGER</span></button>
+    </div>
+
+    <!-- [MÓVIL] AVISO DE ORIENTACIÓN -->
+    <div id="rotate-hint" class="overlay-screen persona-bg-pattern hidden-overlay">
+      <div class="persona-card text-center">
+        <div class="persona-card-inner flex flex-col items-center">
+          <div class="rot-icon">📱</div>
+          <h3 class="text-4xl font-persona-title text-yellow-400 mt-2">GIRA EL TELÉFONO</h3>
+          <p class="text-sm font-mono text-neutral-200 mb-4">El combate está pensado para el modo horizontal.</p>
+          <button id="btn-rotate-ignore" class="persona-btn w-full">JUGAR EN VERTICAL</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MAIN MENU: RED/BLACK COMIC ACTION EDITION -->
     <div id="main-menu" class="overlay-screen persona-bg-pattern menu-ultimate">
       <div class="menu-grain" aria-hidden="true"></div>
@@ -524,6 +667,7 @@
             <li><b class="text-yellow-400">M:</b> Música on/off.</li>
             <li class="text-xs text-neutral-400">Encadena bajas para subir el <b class="text-yellow-400">COMBO</b> y el multiplicador de puntos. Dispara a los <b class="text-red-500">barriles rojos</b> para explotarlos. La munición y la adrenalina se recogen al pasar por encima.</li>
             <li class="text-xs text-neutral-400"><b class="text-red-500">Hunter</b> salta sobre ti · <b class="text-red-500">Smoker</b> te atrapa con la lengua (se rompe con sprint o matándolo) · <b class="text-red-500">Charger</b> embiste (esquívalo) · <b class="text-red-500">Boomer</b> mátalo de lejos · <b class="text-red-500">Spitter</b> escupe ácido, sal del charco.</li>
+            <li class="touch-only text-xs text-neutral-400"><b class="text-yellow-400">TÁCTIL:</b> stick izquierdo = moverse (analógico) · stick derecho = apuntar; dispara al inclinarlo más de un tercio (inclinación leve = solo apuntar / alcance de lanzables) · botones: SPRINT, EMPUJAR, RECARGA, ARMA, FRENESÍ (derecha) y LANZAR, CURAR, RECOGER (izquierda) · <b class="text-yellow-400">CALIDAD</b> gráfica en el menú de pausa.</li>
           </ul>
           <button id="btn-close-how" class="persona-btn w-full">VOLVER AL MENÚ</button>
         </div>
@@ -536,6 +680,7 @@
         <div class="persona-card-inner flex flex-col items-center">
           <h2 class="text-7xl font-persona-title text-yellow-400 drop-shadow-[4px_4px_0px_#e60012] mb-4">PAUSA</h2>
           <button id="btn-resume" class="persona-btn w-full">CONTINUAR</button>
+          <button id="btn-quality" class="persona-btn w-full">CALIDAD: AUTO</button>
           <button id="btn-quit" class="persona-btn w-full">MENÚ PRINCIPAL</button>
         </div>
       </div>
@@ -722,11 +867,92 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
+    // =====================================================================
+    //  [MÓVIL] Calidad gráfica, tamaño lógico del juego y áreas seguras.
+    //  VIEW_W/VIEW_H = tamaño lógico en px CSS (lo que antes era window.innerWidth/Height
+    //  y canvas.width/height). El canvas físico puede ser mayor (devicePixelRatio) o menor
+    //  y se compensa con ctx.setTransform(renderScale…) en cada fotograma, de modo que
+    //  mundo, colisiones, cámara y HUD siguen usando las mismas coordenadas que antes.
+    // =====================================================================
+    // Q.res solo se usa en modo táctil; en PC la escala es siempre 1 (idéntico al original).
+    const QUALITY_PRESETS = [
+      { name: 'BAJA',  res: () => 1,                 light: 0.5, rain: 40,  fog: 0, grain: false, shadow: false, aura: false, nameCommon: false, fxCap: 140, partCap: 150 },
+      { name: 'MEDIA', res: d => Math.min(d, 1.5),   light: 0.5, rain: 80,  fog: 4, grain: false, shadow: false, aura: true,  nameCommon: true,  fxCap: 200, partCap: 240 },
+      { name: 'ALTA',  res: d => Math.min(d, 2),     light: 1,   rain: 130, fog: 7, grain: true,  shadow: true,  aura: true,  nameCommon: true,  fxCap: 260, partCap: 320 }
+    ];
+    let qualityMode = 'auto';   // 'auto' | 'alta' | 'media' | 'baja'
+    let qualityLevel = 2;       // índice en QUALITY_PRESETS
+    let Q = QUALITY_PRESETS[qualityLevel];
+    let VIEW_W = window.innerWidth, VIEW_H = window.innerHeight, renderScale = 1;
+    const SAFE = { t: 0, r: 0, b: 0, l: 0 };
+    let touchMode = false;      // se activa al detectar pantalla táctil (bloque [TÁCTIL] al final)
+    let touchUiReady = false;
+    let HUDM = null;            // métricas del HUD dibujado en el canvas (PC = valores originales)
+    const canvasContainer = document.getElementById('canvas-container');
+
+    // Caché de textos del HUD: evita reescribir innerText (y forzar reflow) 60 veces/s con el mismo valor.
+    const _hudEls = {}, _hudVals = {};
+    function hudText(id, v) {
+      v = String(v);
+      if (_hudVals[id] === v) return;
+      _hudVals[id] = v;
+      (_hudEls[id] || (_hudEls[id] = document.getElementById(id))).innerText = v;
+    }
+    let _hpBarW = '';
+
+    // roundRect no existe en iOS < 16 / navegadores antiguos y se usa en el dibujo del jugador.
+    if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        r = Math.max(0, Math.min(Array.isArray(r) ? (r[0] || 0) : (r || 0), w / 2, h / 2));
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r);
+        this.closePath();
+      };
+    }
+
+    function readSafeAreas() {
+      const probe = document.getElementById('safe-probe');
+      if (!probe) return;
+      const cs = getComputedStyle(probe);
+      SAFE.t = parseFloat(cs.paddingTop) || 0; SAFE.r = parseFloat(cs.paddingRight) || 0;
+      SAFE.b = parseFloat(cs.paddingBottom) || 0; SAFE.l = parseFloat(cs.paddingLeft) || 0;
+    }
+
+    function computeHudMetrics() {
+      if (!touchMode) {
+        HUDM = { comboY: 78, comboFont: 54, comboBarY: 92, fw: 250, fy: 108, ms: 170, mx: 26, my: 190, bannerY: 0.27, bannerFont: 78, bannerStep: 100, subFont: 18, subY: 30 };
+        return;
+      }
+      const T = SAFE.t + 60; // bajo la tarjeta de vida (arriba al centro)
+      const bf = Math.max(34, Math.min(56, Math.round(VIEW_H * 0.13)));
+      HUDM = {
+        comboY: T + 30, comboFont: 38, comboBarY: T + 38, fw: 170, fy: T + 50,
+        ms: Math.max(72, Math.min(112, Math.round(VIEW_H * 0.27))), mx: SAFE.l + 10, my: SAFE.t + 70,
+        bannerY: 0.3, bannerFont: bf, bannerStep: Math.round(bf * 1.25), subFont: 13, subY: Math.round(bf * 0.42)
+      };
+    }
+
     function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      document.documentElement.style.setProperty('--app-h', window.innerHeight + 'px'); // respaldo si no hay 100dvh
+      const box = canvasContainer.getBoundingClientRect();
+      VIEW_W = Math.max(1, Math.round(box.width || window.innerWidth));
+      VIEW_H = Math.max(1, Math.round(box.height || window.innerHeight));
+      renderScale = touchMode ? Math.max(0.5, Q.res(window.devicePixelRatio || 1)) : 1;
+      canvas.width = Math.round(VIEW_W * renderScale);   // resolución física (se redibuja con setTransform)
+      canvas.height = Math.round(VIEW_H * renderScale);
+      canvas.style.width = VIEW_W + 'px';                // tamaño CSS = tamaño lógico
+      canvas.style.height = VIEW_H + 'px';
+      readSafeAreas();
+      computeHudMetrics();
+      if (touchUiReady) layoutTouchUi();
     }
     window.addEventListener('resize', resizeCanvas);
+    // Al girar el teléfono el tamaño final llega tarde en algunos navegadores.
+    window.addEventListener('orientationchange', () => setTimeout(() => { resizeCanvas(); if (typeof resizeLight === 'function') resizeLight(); }, 280));
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', () => { resizeCanvas(); if (typeof resizeLight === 'function') resizeLight(); });
     resizeCanvas();
 
     const WORLD_WIDTH = 2800;
@@ -1225,6 +1451,12 @@
         if (dx !== 0 && dy !== 0) {
           dx *= 0.7071;
           dy *= 0.7071;
+        }
+
+        // [TÁCTIL] El stick izquierdo sustituye al teclado mientras haya un dedo activo (analógico: magnitud 0..1).
+        if (touchState.moveMag > 0) {
+          dx = touchState.moveX; dy = touchState.moveY;
+          if (this.isSprinting) { const m = Math.hypot(dx, dy) || 1; dx /= m; dy /= m; } // el impulso va a velocidad completa
         }
 
         let nextX = this.x + dx * currentSpeed;
@@ -1908,8 +2140,8 @@
         ctx.font = isBoss ? 'bold 15px Bebas Neue' : 'bold 10px Share Tech Mono';
         ctx.fillStyle = isBoss ? '#ff5147' : '#d8dfd5';
         ctx.shadowColor = '#080a09';
-        ctx.shadowBlur = 5;
-        ctx.fillText(this.displayName, this.x, this.y - this.radius - (isBoss ? 18 : 10));
+        ctx.shadowBlur = Q.shadow ? 5 : 0; // shadowBlur es caro en móviles
+        if (Q.nameCommon || this.type !== 'common') ctx.fillText(this.displayName, this.x, this.y - this.radius - (isBoss ? 18 : 10));
         ctx.shadowBlur = 0;
         if (isBoss || this.hp < this.maxHp) {
           const barW = isBoss ? 52 : 28;
@@ -2336,10 +2568,10 @@
     function addFlash(x, y, r, life, color = '255,200,120') { flashes.push({ x, y, r, life, max: life, color }); }
 
     function inView(x, y, m = 60) {
-      return x > camera.x - m && x < camera.x + canvas.width + m && y > camera.y - m && y < camera.y + canvas.height + m;
+      return x > camera.x - m && x < camera.x + VIEW_W + m && y > camera.y - m && y < camera.y + VIEW_H + m;
     }
     function inViewRect(o, m = 60) {
-      return o.x + o.w > camera.x - m && o.x < camera.x + canvas.width + m && o.y + o.h > camera.y - m && o.y < camera.y + canvas.height + m;
+      return o.x + o.w > camera.x - m && o.x < camera.x + VIEW_W + m && o.y + o.h > camera.y - m && o.y < camera.y + VIEW_H + m;
     }
 
     function knockEntity(e, angle, dist) {
@@ -2721,7 +2953,12 @@
     // ---------- Render: ambiente ----------
     const lightCanvas = document.createElement('canvas');
     const lightCtx = lightCanvas.getContext('2d');
-    function resizeLight() { lightCanvas.width = canvas.width; lightCanvas.height = canvas.height; }
+    let lightScale = 1; // [MÓVIL] resolución de la capa de luz (0.5 en calidad media/baja)
+    function resizeLight() {
+      lightScale = Q.light;
+      lightCanvas.width = Math.max(1, Math.round(VIEW_W * lightScale));
+      lightCanvas.height = Math.max(1, Math.round(VIEW_H * lightScale));
+    }
     window.addEventListener('resize', resizeLight);
     resizeLight();
 
@@ -2745,7 +2982,7 @@
     function drawFog() {
       const t = frameCount * 0.004;
       ctx.save();
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < Q.fog; i++) {
         const fx = (Math.sin(t + i * 1.7) * 0.5 + 0.5) * WORLD_WIDTH, fy = (Math.cos(t * 0.8 + i * 2.3) * 0.5 + 0.5) * WORLD_HEIGHT;
         if (!inView(fx, fy, 500)) continue;
         const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, 480);
@@ -2758,9 +2995,11 @@
     }
 
     function renderLighting(ox, oy) {
-      const w = canvas.width, h = canvas.height, L = lightCtx;
+      const w = VIEW_W, h = VIEW_H, L = lightCtx;
+      L.setTransform(1, 0, 0, 1, 0, 0);
       L.globalCompositeOperation = 'source-over';
-      L.clearRect(0, 0, w, h);
+      L.clearRect(0, 0, lightCanvas.width, lightCanvas.height);
+      L.setTransform(lightScale, 0, 0, lightScale, 0, 0); // [MÓVIL] coordenadas lógicas, resolución reducida
       const dark = Math.max(0.3, 0.74 - lightning * 0.45 - (frenzyTimer > 0 ? 0.08 : 0));
       L.fillStyle = `rgba(3,5,16,${dark})`;
       L.fillRect(0, 0, w, h);
@@ -2800,7 +3039,7 @@
       for (const f of flashes) hole(f.x, f.y, f.r, 0.95 * (f.life / f.max));
       for (const t of throwablesInAir) if (t.landed && t.type === 'pipebomb' && Math.floor(frameCount / 6) % 2 === 0) hole(t.x, t.y, 120, 0.7);
       L.globalCompositeOperation = 'source-over';
-      ctx.drawImage(lightCanvas, 0, 0);
+      ctx.drawImage(lightCanvas, 0, 0, w, h);
     }
 
     function renderGlows() {
@@ -2830,7 +3069,7 @@
         const sc = z.type === 'tank' ? 1.55 : z.type === 'charger' ? 1.18 : 1;
         const lx = 9 * sc, ly = -15 * sc, ca = Math.cos(z.angle), sa = Math.sin(z.angle);
         glow(z.x + lx * ca - ly * sa, z.y + lx * sa + ly * ca, 9 * sc, z.type === 'tank' ? '255,40,30' : '255,70,40', 0.85);
-        if (auras[z.type]) glow(z.x, z.y, z.radius * 2.6, auras[z.type], 0.11);
+        if (Q.aura && auras[z.type]) glow(z.x, z.y, z.radius * 2.6, auras[z.type], 0.11);
       }
       if (frenzyTimer > 0) glow(player.x, player.y, 120, '255,150,40', 0.35);
       ctx.restore();
@@ -2866,12 +3105,13 @@
     }
 
     function renderRain(dt) {
-      const w = canvas.width, h = canvas.height;
+      const w = VIEW_W, h = VIEW_H;
       ctx.save();
       ctx.strokeStyle = 'rgba(180,200,230,0.22)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      for (const d of rainDrops) {
+      for (let ri = 0, rn = Math.min(Q.rain, rainDrops.length); ri < rn; ri++) {
+        const d = rainDrops[ri];
         d.y += d.s * dt; d.x -= 4 * dt;
         if (d.y > h) { d.y = -20; d.x = Math.random() * w; }
         if (d.x < 0 || d.x > w) d.x = Math.random() * w;
@@ -2883,7 +3123,7 @@
     }
 
     function postFx() {
-      const w = canvas.width, h = canvas.height;
+      const w = VIEW_W, h = VIEW_H;
       ctx.save();
       // viñeta
       let g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.max(w, h) * 0.75);
@@ -2929,7 +3169,7 @@
         ctx.fillRect(0, 0, w, h);
       }
       // grano de película
-      if (noiseCanvas) {
+      if (noiseCanvas && Q.grain) {
         ctx.globalAlpha = 0.05;
         ctx.drawImage(noiseCanvas, -Math.floor(Math.random() * 256), -Math.floor(Math.random() * 256), w + 256, h + 256);
         ctx.globalAlpha = 1;
@@ -2939,7 +3179,7 @@
 
     // ---------- HUD en canvas: combo, frenesí, minimapa, banners ----------
     function drawHudOverlay() {
-      const w = canvas.width, h = canvas.height;
+      const w = VIEW_W, h = VIEW_H;
       ctx.save();
       ctx.textAlign = 'center';
 
@@ -2947,34 +3187,34 @@
       if (combo >= 2) {
         const mult = comboMult();
         ctx.save();
-        ctx.translate(w / 2, 78);
+        ctx.translate(w / 2, HUDM.comboY);
         ctx.transform(1, 0, -0.18, 1, 0, 0);
         const pop = comboTimer > 140 ? 1 + (comboTimer - 140) * 0.02 : 1;
         ctx.scale(pop, pop);
-        ctx.font = "54px 'Bebas Neue', Impact, sans-serif";
+        ctx.font = HUDM.comboFont + "px 'Bebas Neue', Impact, sans-serif";
         ctx.lineWidth = 4;
         ctx.strokeStyle = '#000';
         ctx.fillStyle = mult >= 4 ? '#ff7a18' : '#ffd700';
         ctx.strokeText(`${combo} COMBO  x${mult}`, 0, 0);
         ctx.fillText(`${combo} COMBO  x${mult}`, 0, 0);
         ctx.restore();
-        const bw = 170, frac = Math.min(1, comboTimer / (frenzyTimer > 0 ? 220 : 150));
-        ctx.fillStyle = 'rgba(0,0,0,.65)'; ctx.fillRect(w / 2 - bw / 2, 92, bw, 6);
-        ctx.fillStyle = mult >= 4 ? '#ff7a18' : '#ffd700'; ctx.fillRect(w / 2 - bw / 2, 92, bw * frac, 6);
+        const bw = Math.round(HUDM.fw * 0.68), frac = Math.min(1, comboTimer / (frenzyTimer > 0 ? 220 : 150));
+        ctx.fillStyle = 'rgba(0,0,0,.65)'; ctx.fillRect(w / 2 - bw / 2, HUDM.comboBarY, bw, 6);
+        ctx.fillStyle = mult >= 4 ? '#ff7a18' : '#ffd700'; ctx.fillRect(w / 2 - bw / 2, HUDM.comboBarY, bw * frac, 6);
       }
 
       // Barra de frenesí
-      const fw = 250, fx = w / 2 - fw / 2, fy = 108;
+      const fw = HUDM.fw, fx = w / 2 - fw / 2, fy = HUDM.fy;
       ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillRect(fx - 2, fy - 2, fw + 4, 14);
       const ready = frenzy >= 100 && frenzyTimer <= 0;
       ctx.fillStyle = frenzyTimer > 0 ? '#ff7a18' : ready ? (Math.floor(frameCount / 8) % 2 ? '#ffd700' : '#ff7a18') : '#b45309';
       ctx.fillRect(fx, fy, fw * Math.min(1, frenzy / 100), 10);
       ctx.font = "bold 12px 'Share Tech Mono', monospace";
       ctx.fillStyle = '#fff';
-      ctx.fillText(frenzyTimer > 0 ? 'FRENESÍ ACTIVO' : ready ? '¡FRENESÍ LISTO!  [E]' : 'FRENESÍ', w / 2, fy + 25);
+      if (!touchMode) ctx.fillText(frenzyTimer > 0 ? 'FRENESÍ ACTIVO' : ready ? '¡FRENESÍ LISTO!  [E]' : 'FRENESÍ', w / 2, fy + 25); // en táctil el texto va en el botón
 
       // Minimapa
-      const ms = 170, mx = 26, my = 190, k = ms / WORLD_WIDTH;
+      const ms = HUDM.ms, mx = HUDM.mx, my = HUDM.my, k = ms / WORLD_WIDTH;
       ctx.fillStyle = 'rgba(5,6,10,.78)'; ctx.fillRect(mx, my, ms, ms);
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(mx, my, ms, ms);
       for (const o of obstacles) {
@@ -2989,7 +3229,7 @@
         ctx.fillRect(mx + z.x * k - sz / 2, my + z.y * k - sz / 2, sz, sz);
       }
       ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1;
-      ctx.strokeRect(mx + camera.x * k, my + camera.y * k, canvas.width * k, canvas.height * k);
+      ctx.strokeRect(mx + camera.x * k, my + camera.y * k, VIEW_W * k, VIEW_H * k);
       ctx.save();
       ctx.translate(mx + player.x * k, my + player.y * k);
       ctx.rotate(player.angle);
@@ -3000,10 +3240,10 @@
       // Ayuda inferior
       ctx.fillStyle = 'rgba(255,255,255,.35)';
       ctx.font = "11px 'Share Tech Mono', monospace";
-      ctx.fillText(`[P] PAUSA  ·  [M] MÚSICA ${soundEngine.musicMuted ? 'OFF' : 'ON'}`, w / 2, h - 10);
+      if (!touchMode) ctx.fillText(`[P] PAUSA  ·  [M] MÚSICA ${soundEngine.musicMuted ? 'OFF' : 'ON'}`, w / 2, h - 10);
 
       // Banners
-      let yy = h * 0.27;
+      let yy = h * HUDM.bannerY;
       const list = announcements.slice(-2);
       for (const a of list) {
         const t = 1 - a.life / a.max;
@@ -3014,7 +3254,7 @@
         ctx.transform(1, 0, -0.2, 1, 0, 0);
         ctx.scale(sc, sc);
         ctx.globalAlpha = alpha;
-        ctx.font = "78px 'Bebas Neue', Impact, sans-serif";
+        ctx.font = HUDM.bannerFont + "px 'Bebas Neue', Impact, sans-serif";
         ctx.lineJoin = 'round';
         ctx.fillStyle = '#e60012';
         ctx.fillText(a.text, 6, 6);
@@ -3023,12 +3263,12 @@
         ctx.fillStyle = a.color;
         ctx.fillText(a.text, 0, 0);
         if (a.sub) {
-          ctx.font = "bold 18px 'Share Tech Mono', monospace";
+          ctx.font = "bold " + HUDM.subFont + "px 'Share Tech Mono', monospace";
           ctx.fillStyle = '#fff';
-          ctx.fillText(a.sub, 0, 30);
+          ctx.fillText(a.sub, 0, HUDM.subY);
         }
         ctx.restore();
-        yy += 100;
+        yy += HUDM.bannerStep;
       }
       ctx.restore();
     }
@@ -3145,8 +3385,8 @@
     function drawCityGround() {
       const left = Math.max(0, Math.floor(camera.x / 160) * 160);
       const top = Math.max(0, Math.floor(camera.y / 160) * 160);
-      const right = Math.min(WORLD_WIDTH, camera.x + canvas.width + 160);
-      const bottom = Math.min(WORLD_HEIGHT, camera.y + canvas.height + 160);
+      const right = Math.min(WORLD_WIDTH, camera.x + VIEW_W + 160);
+      const bottom = Math.min(WORLD_HEIGHT, camera.y + VIEW_H + 160);
       ctx.fillStyle = '#25292a';
       ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
@@ -3358,8 +3598,9 @@
     }
 
     function updateStep() {
+      touchApplyAim(); // [TÁCTIL] fija mouse.x/y desde el stick derecho (no hace nada en PC)
       // Cámara y mira (sin sacudida) para que la puntería sea estable.
-      const viewW = window.innerWidth, viewH = window.innerHeight;
+      const viewW = VIEW_W, viewH = VIEW_H;
       camera.x = player.x - viewW / 2 + (mouse.x - viewW / 2) * 0.2;
       camera.y = player.y - viewH / 2 + (mouse.y - viewH / 2) * 0.2;
       mouse.worldX = mouse.x + camera.x;
@@ -3409,8 +3650,8 @@
         particles[i].update();
         if (particles[i].life <= 0) particles.splice(i, 1);
       }
-      if (particles.length > 320) particles.splice(0, particles.length - 320);
-      if (effects.length > 260) effects.splice(0, effects.length - 260);
+      if (particles.length > Q.partCap) particles.splice(0, particles.length - Q.partCap);
+      if (effects.length > Q.fxCap) effects.splice(0, effects.length - Q.fxCap);
       if (floatingTexts.length > 90) floatingTexts.splice(0, floatingTexts.length - 90);
 
       updateFlowField();
@@ -3432,38 +3673,39 @@
     }
 
     function updateHud() {
-        document.getElementById('hp-text').innerText = `${Math.max(0, Math.ceil(player.hp))} / 200 HP`;
-        document.getElementById('hp-bar').style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
-        document.getElementById('zombie-count').innerText = zombies.length + zombiesToSpawn + surgeLeft;
+        hudText('hp-text', `${Math.max(0, Math.ceil(player.hp))} / 200 HP`);
+        const hpW = Math.max(0, (player.hp / player.maxHp) * 100).toFixed(1) + '%';
+        if (hpW !== _hpBarW) { _hpBarW = hpW; document.getElementById('hp-bar').style.width = hpW; }
+        hudText('zombie-count', zombies.length + zombiesToSpawn + surgeLeft);
 
         if (player.activeWeapon === 'shotgun') {
-          document.getElementById('side-weapon-title').innerText = 'ESCOPETA DE BOMBEO';
-          document.getElementById('side-weapon-icon').innerText = ' shotgun ';
-          document.getElementById('side-ammo').innerText = player.reloadTimer > 0 ? `RECARGANDO ${(player.reloadTimer / 60).toFixed(1)}s` : `${player.shotgunAmmo} / ${player.shotgunReserve}`;
+          hudText('side-weapon-title', 'ESCOPETA DE BOMBEO');
+          hudText('side-weapon-icon', ' shotgun ');
+          hudText('side-ammo', player.reloadTimer > 0 ? `RECARGANDO ${(player.reloadTimer / 60).toFixed(1)}s` : `${player.shotgunAmmo} / ${player.shotgunReserve}`);
         } else {
-          document.getElementById('side-weapon-title').innerText = 'RIFLE DE ASALTO AK-47';
-          document.getElementById('side-weapon-icon').innerText = ' ak-47 ';
-          document.getElementById('side-ammo').innerText = player.reloadTimer > 0 ? `RECARGANDO ${(player.reloadTimer / 60).toFixed(1)}s` : `${player.ak47Ammo} / ${player.ak47Reserve}`;
+          hudText('side-weapon-title', 'RIFLE DE ASALTO AK-47');
+          hudText('side-weapon-icon', ' ak-47 ');
+          hudText('side-ammo', player.reloadTimer > 0 ? `RECARGANDO ${(player.reloadTimer / 60).toFixed(1)}s` : `${player.ak47Ammo} / ${player.ak47Reserve}`);
         }
 
-        document.getElementById('side-throwable-count').innerText = player.throwableCount;
+        hudText('side-throwable-count', player.throwableCount);
         if (player.throwable === 'pipebomb') {
-          document.getElementById('side-throwable-title').innerText = 'PIPE BOMB (BOMBA CASERA)';
-          document.getElementById('side-throwable-icon').innerText = '💣';
+          hudText('side-throwable-title', 'PIPE BOMB (BOMBA CASERA)');
+          hudText('side-throwable-icon', '💣');
         } else if (player.throwable === 'molotov') {
-          document.getElementById('side-throwable-title').innerText = 'CÓCTEL MOLOTOV';
-          document.getElementById('side-throwable-icon').innerText = '🍾';
+          hudText('side-throwable-title', 'CÓCTEL MOLOTOV');
+          hudText('side-throwable-icon', '🍾');
         } else if (player.throwable === 'grenade') {
-          document.getElementById('side-throwable-title').innerText = 'GRANADA DE FRAG';
-          document.getElementById('side-throwable-icon').innerText = '💥';
+          hudText('side-throwable-title', 'GRANADA DE FRAG');
+          hudText('side-throwable-icon', '💥');
         } else {
-          document.getElementById('side-throwable-title').innerText = 'NINGUNO';
-          document.getElementById('side-throwable-icon').innerText = 'Ø';
+          hudText('side-throwable-title', 'NINGUNO');
+          hudText('side-throwable-icon', 'Ø');
         }
 
-        document.getElementById('side-medkit-count').innerText = `${player.medkits}`;
-        document.getElementById('score-display').innerText = score;
-        document.getElementById('kills-display').innerText = kills;
+        hudText('side-medkit-count', `${player.medkits}`);
+        hudText('score-display', score);
+        hudText('kills-display', kills);
         const flashOn = hitFlash > 0;
         if (flashOn !== lastFlash) {
           document.getElementById('damage-flash').style.opacity = flashOn ? '1' : '0';
@@ -3472,7 +3714,7 @@
     }
 
     function renderFrame(frozen, dt) {
-      const viewW = window.innerWidth, viewH = window.innerHeight;
+      const viewW = VIEW_W, viewH = VIEW_H;
       camera.x = player.x - viewW / 2 + (mouse.x - viewW / 2) * 0.2;
       camera.y = player.y - viewH / 2 + (mouse.y - viewH / 2) * 0.2;
       mouse.worldX = mouse.x + camera.x;
@@ -3485,7 +3727,11 @@
       ctx.save();
       ctx.translate(-ox, -oy);
       drawCityGround();
-      ctx.drawImage(bloodCanvas, 0, 0);
+      { // [MÓVIL] solo se copia la parte visible del canvas de sangre (mide 2800×2800)
+        const bx = Math.max(0, Math.floor(ox)), by = Math.max(0, Math.floor(oy));
+        const bx2 = Math.min(WORLD_WIDTH, Math.ceil(ox + VIEW_W) + 2), by2 = Math.min(WORLD_HEIGHT, Math.ceil(oy + VIEW_H) + 2);
+        if (bx2 > bx && by2 > by) ctx.drawImage(bloodCanvas, bx, by, bx2 - bx, by2 - by, bx, by, bx2 - bx, by2 - by);
+      }
       drawFog();
       for (const o of obstacles) {
         if (o.kind === 'barrel' || !inViewRect(o, 80)) continue;
@@ -3572,9 +3818,14 @@
 
     function gameLoop(now) {
       requestAnimationFrame(gameLoop);
-      const frame = Math.min(100, now - lastTime);
+      const rawFrame = now - lastTime;
+      const frame = Math.min(100, rawFrame);
       lastTime = now;
+      // [MÓVIL] El canvas físico puede tener otra resolución: se dibuja siempre en coordenadas lógicas.
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
+      if (gameState === 'PLAYING') autoQualitySample(rawFrame);
 
       if (gameState === 'PLAYING' && player) {
         const ts = slowmoMs > 0 ? 0.35 : 1;
@@ -3695,7 +3946,7 @@
           ctx.font = this.type === 'tank' ? 'bold 10px monospace' : 'bold 8px monospace';
           ctx.textAlign = 'center';
           ctx.fillStyle = this.type === 'tank' ? '#ff3d46' : '#fff';
-          ctx.shadowColor = '#000'; ctx.shadowBlur = 4;
+          ctx.shadowColor = '#000'; ctx.shadowBlur = Q.shadow ? 4 : 0;
           ctx.fillText(this.displayName || this.type.toUpperCase(), this.x, y - 3);
         }
         ctx.restore();
@@ -3735,7 +3986,7 @@
       const closeThreat = Math.max(0, 1 - nearest / 210);
       const danger = Math.max(lowHp * .8, closeThreat * .42);
       if (danger > .025) {
-        const w = canvas.width, h = canvas.height;
+        const w = VIEW_W, h = VIEW_H;
         ctx.save();
         const grad = ctx.createRadialGradient(w/2, h/2, Math.min(w,h)*.24, w/2, h/2, Math.max(w,h)*.72);
         grad.addColorStop(0, 'rgba(130,0,8,0)');
@@ -3757,6 +4008,373 @@
         ctx.restore();
       }
     };
+
+    // =====================================================================
+    //  [TÁCTIL] CONTROLES MÓVILES (twin-stick) Y ADAPTACIÓN
+    //  Principio: no se duplica lógica del juego. Los sticks alimentan las mismas
+    //  variables que usan teclado/ratón (movimiento analógico en Survivor.update,
+    //  mouse.x/y + mouse.down para apuntar y disparar) y los botones llaman a los
+    //  métodos existentes de Survivor (triggerSprint, shove, reload, ...).
+    // =====================================================================
+    const touchState = {
+      enabled: false, lastTouchTime: -9999, runActive: false,
+      moveId: null, moveOX: 0, moveOY: 0, moveX: 0, moveY: 0, moveMag: 0,
+      aimId: null, aimOX: 0, aimOY: 0, aimX: 1, aimY: 0, aimMag: 0.6, aimTouched: false, firing: false
+    };
+    const tUI = document.getElementById('touch-ui');
+    const tZone = { move: document.getElementById('tz-move'), aim: document.getElementById('tz-aim') };
+    const tJoy = { move: document.getElementById('joy-move'), aim: document.getElementById('joy-aim') };
+    const tBtn = {};
+    ['sprint', 'shove', 'reload', 'swap', 'frenzy', 'throw', 'heal', 'pickup'].forEach(n => { tBtn[n] = document.getElementById('tb-' + n); });
+    const tEls = {
+      throwN: document.getElementById('tb-throw-n'), healN: document.getElementById('tb-heal-n'),
+      throwL: document.getElementById('tl-throw'), frenzyL: document.getElementById('tl-frenzy'),
+      wName: document.getElementById('tw-name'), wAmmo: document.getElementById('tw-ammo')
+    };
+    const clampN = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+    // ---------- Geometría ----------
+    function joyR() { return clampN(Math.round(Math.min(VIEW_W, VIEW_H) * 0.16), 44, 72); }
+    function uiScale() { return clampN(Math.min(VIEW_W, VIEW_H) / 380, 0.8, 1.15); }
+    // Centros de los botones medidos desde la esquina (x,y en px "de diseño", se escalan con uiScale).
+    const BTN_LAYOUT = {
+      sprint: { side: 'r', x: 196, y: 44 },  shove: { side: 'r', x: 206, y: 118 }, reload: { side: 'r', x: 170, y: 190 },
+      swap:   { side: 'r', x: 96,  y: 214 }, frenzy: { side: 'r', x: 34,  y: 192 },
+      throw:  { side: 'l', x: 196, y: 44 },  heal:   { side: 'l', x: 206, y: 118 }, pickup: { side: 'l', x: 170, y: 190 }
+    };
+    function defaultJoyOrigin(kind) {
+      const R = joyR();
+      return {
+        x: kind === 'move' ? SAFE.l + R + 28 : VIEW_W - SAFE.r - R - 28,
+        y: VIEW_H - SAFE.b - R - 22
+      };
+    }
+    function placeJoy(kind, cx, cy, dx, dy) {
+      const R = joyR();
+      tJoy[kind].style.transform = `translate3d(${cx - R}px,${cy - R}px,0)`;
+      tJoy[kind].firstElementChild.style.transform = `translate3d(${dx || 0}px,${dy || 0}px,0)`;
+    }
+    function layoutTouchUi() {
+      const ui = uiScale(), R = joyR();
+      tUI.style.setProperty('--jr', R + 'px');
+      tUI.style.setProperty('--ui', ui);
+      const b = clampN(Math.round(54 * ui), 46, 62);
+      for (const name in BTN_LAYOUT) {
+        const L = BTN_LAYOUT[name], el = tBtn[name];
+        const cx = L.side === 'r' ? VIEW_W - SAFE.r - L.x * ui : SAFE.l + L.x * ui;
+        const cy = VIEW_H - SAFE.b - L.y * ui;
+        el.style.width = b + 'px'; el.style.height = b + 'px';
+        el.style.left = cx + 'px'; el.style.top = cy + 'px';
+        el.style.fontSize = (9 * ui).toFixed(1) + 'px';
+      }
+      for (const kind of ['move', 'aim']) {
+        if (touchState[kind + 'Id'] === null) { const d = defaultJoyOrigin(kind); placeJoy(kind, d.x, d.y, 0, 0); }
+      }
+    }
+
+    // ---------- Joysticks flotantes (Pointer Events, un pointerId por dedo) ----------
+    function stickDown(kind, e) {
+      if (e.pointerType === 'mouse' || gameState !== 'PLAYING') return; // el ratón sigue por los eventos originales
+      e.preventDefault();
+      const st = touchState;
+      if (st[kind + 'Id'] !== null) return;       // ya hay un dedo controlando este stick
+      st[kind + 'Id'] = e.pointerId;
+      try { tZone[kind].setPointerCapture(e.pointerId); } catch (_) {}
+      const rc = canvasContainer.getBoundingClientRect(), R = joyR();
+      const x = e.clientX - rc.left, y = e.clientY - rc.top;
+      st[kind + 'OX'] = clampN(x, SAFE.l + R + 6, VIEW_W - SAFE.r - R - 6);
+      st[kind + 'OY'] = clampN(y, SAFE.t + R + 6, VIEW_H - SAFE.b - R - 6);
+      tJoy[kind].classList.remove('idle');
+      stickMove(kind, x, y);
+    }
+    function stickMove(kind, x, y) {
+      const st = touchState, R = joyR();
+      let ox = st[kind + 'OX'], oy = st[kind + 'OY'];
+      let dx = x - ox, dy = y - oy, len = Math.hypot(dx, dy);
+      if (len > R) { // la base sigue al dedo para no perder el control al deslizar
+        const k = (len - R) / len;
+        ox = clampN(ox + dx * k, SAFE.l + R + 6, VIEW_W - SAFE.r - R - 6);
+        oy = clampN(oy + dy * k, SAFE.t + R + 6, VIEW_H - SAFE.b - R - 6);
+        st[kind + 'OX'] = ox; st[kind + 'OY'] = oy;
+        dx = x - ox; dy = y - oy; len = Math.hypot(dx, dy);
+      }
+      const mag = Math.min(1, len / R);
+      const ux = len > 0 ? dx / len : 0, uy = len > 0 ? dy / len : 0;
+      placeJoy(kind, ox, oy, ux * Math.min(len, R), uy * Math.min(len, R));
+      if (kind === 'move') {
+        // Zona muerta del 14 %; fuera de ella la velocidad crece con la distancia (analógico).
+        if (mag < 0.14) { st.moveX = 0; st.moveY = 0; st.moveMag = 0; }
+        else { const m = (mag - 0.14) / 0.86; st.moveX = ux * m; st.moveY = uy * m; st.moveMag = m; }
+      } else {
+        // Apunta desde el 14 %; dispara desde el 38 % (histéresis al 28 %). Entre medias solo se apunta (útil para lanzables).
+        if (mag >= 0.14) { st.aimX = ux; st.aimY = uy; st.aimMag = mag; st.aimTouched = true; }
+        st.firing = mag >= (st.firing ? 0.28 : 0.38);
+        tJoy.aim.classList.toggle('firing', st.firing);
+      }
+    }
+    function stickUp(kind) {
+      const st = touchState;
+      if (kind === 'move') { st.moveId = null; st.moveX = 0; st.moveY = 0; st.moveMag = 0; }
+      else {
+        st.aimId = null;
+        if (st.firing) { st.firing = false; mouse.down = false; } // suelta el gatillo del motor original
+        tJoy.aim.classList.remove('firing');
+      }
+      tJoy[kind].classList.add('idle');
+      const d = defaultJoyOrigin(kind);
+      placeJoy(kind, d.x, d.y, 0, 0);
+    }
+    for (const kind of ['move', 'aim']) {
+      const z = tZone[kind];
+      z.addEventListener('pointerdown', (e) => stickDown(kind, e));
+      z.addEventListener('pointermove', (e) => {
+        if (e.pointerId !== touchState[kind + 'Id']) return;
+        e.preventDefault();
+        const rc = canvasContainer.getBoundingClientRect();
+        stickMove(kind, e.clientX - rc.left, e.clientY - rc.top);
+      });
+      const end = (e) => { if (e.pointerId === touchState[kind + 'Id']) stickUp(kind); };
+      z.addEventListener('pointerup', end);
+      z.addEventListener('pointercancel', end);
+      z.addEventListener('lostpointercapture', end);
+    }
+
+    // Libera todo (dedos, botones pulsados y gatillo) para que nada se quede "pegado".
+    function resetTouchControls() {
+      const st = touchState;
+      if (st.moveId !== null || st.moveMag !== 0) stickUp('move');
+      if (st.aimId !== null || st.firing) stickUp('aim');
+      for (const n in tBtn) tBtn[n].classList.remove('down');
+    }
+
+    // Convierte el stick de apuntado en un "puntero virtual": mismas fórmulas de cámara que el ratón
+    // (camera = jugador + (mouse - centro) * 0.2  =>  mouse = centro + dir * dist / 1.2), así láser,
+    // disparo y lanzables usan el sistema original sin cambios.
+    function touchApplyAim() {
+      const st = touchState;
+      if (!st.enabled || !st.runActive) return;
+      if (!(st.aimId !== null || st.moveId !== null || performance.now() - st.lastTouchTime < 5000)) return; // deja el ratón en dispositivos híbridos
+      let ax = st.aimX, ay = st.aimY;
+      if (!st.aimTouched && st.moveMag > 0.2) { ax = st.moveX / st.moveMag; ay = st.moveY / st.moveMag; } // aún sin apuntar: mira hacia donde camina
+      const dist = 150 + 230 * st.aimMag; // más inclinación = lanzables más lejos
+      mouse.x = VIEW_W / 2 + ax * dist / 1.2;
+      mouse.y = VIEW_H / 2 + ay * dist / 1.2;
+      if (st.aimId !== null) mouse.down = st.firing;
+    }
+
+    // ---------- Botones de acción: reutilizan los métodos existentes ----------
+    const TOUCH_ACTIONS = {
+      sprint: () => player.triggerSprint(),      // = clic derecho
+      shove:  () => player.shove(),              // = ESPACIO
+      reload: () => player.reload(),             // = R
+      swap:   () => {                            // = teclas 1 / 2
+        if (player.activeWeapon === 'shotgun') { if (player.hasAk47) player.activeWeapon = 'ak47'; }
+        else player.activeWeapon = 'shotgun';
+      },
+      heal:   () => player.toggleHealing(),      // = Q
+      throw:  () => player.throwItem(),          // = G
+      pickup: () => player.pickupNearbyItem(),   // = V
+      frenzy: () => activateFrenzy()             // = E
+    };
+    for (const name in TOUCH_ACTIONS) {
+      const el = tBtn[name];
+      el.addEventListener('pointerdown', (e) => {
+        e.preventDefault(); e.stopPropagation();  // evita eventos de ratón emulados y que el stick lo reciba
+        el.classList.add('down');
+        try { el.setPointerCapture(e.pointerId); } catch (_) {}
+        if (gameState === 'PLAYING' && player) TOUCH_ACTIONS[name]();
+      });
+      const up = () => el.classList.remove('down');
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+      el.addEventListener('lostpointercapture', up);
+    }
+    function bindTopButton(id, fn) {
+      const el = document.getElementById(id);
+      el.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); el.classList.add('down'); try { el.setPointerCapture(e.pointerId); } catch (_) {} fn(el); });
+      const up = () => el.classList.remove('down');
+      el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+      return el;
+    }
+    bindTopButton('tb-pause', () => { if (gameState === 'PLAYING') pauseGame(); else if (gameState === 'PAUSED') resumeGame(); });
+    bindTopButton('tb-music', (el) => { soundEngine.toggleMusic(); el.classList.toggle('off', !!soundEngine.musicMuted); });
+    const tbFs = bindTopButton('tb-fs', () => {
+      const d = document, el = d.documentElement;
+      try {
+        if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
+        else (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+      } catch (_) {}
+    });
+    if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) tbFs.style.display = 'none'; // iPhone Safari no lo soporta
+
+    // ---------- Estado visual de botones (se llama una vez por fotograma desde updateHud) ----------
+    function flag(el, key, on) {
+      const f = el._f || (el._f = {});
+      if (f[key] !== on) { f[key] = on; el.classList.toggle(key, on); }
+    }
+    function txt(el, v) { v = String(v); if (el._t !== v) { el._t = v; el.textContent = v; } }
+    function touchUiSync() {
+      const p = player;
+      flag(tBtn.sprint, 'off', p.sprintCooldown > 0);
+      flag(tBtn.shove, 'off', p.shoveCd > 0);
+      flag(tBtn.reload, 'on', p.reloadTimer > 0);
+      flag(tBtn.swap, 'off', !p.hasAk47);
+      flag(tBtn.heal, 'off', p.medkits <= 0 || (p.hp >= p.maxHp && !p.isHealing));
+      flag(tBtn.heal, 'on', p.isHealing);
+      txt(tEls.healN, p.medkits);
+      flag(tBtn.throw, 'off', p.throwableCount <= 0);
+      txt(tEls.throwN, p.throwableCount);
+      txt(tEls.throwL, p.throwable === 'pipebomb' ? 'PIPE' : p.throwable === 'molotov' ? 'MOLOTOV' : p.throwable === 'grenade' ? 'GRANADA' : 'LANZAR');
+      const ready = frenzy >= 100 && frenzyTimer <= 0;
+      flag(tBtn.frenzy, 'ready', ready);
+      flag(tBtn.frenzy, 'on', frenzyTimer > 0);
+      flag(tBtn.frenzy, 'off', !ready && frenzyTimer <= 0);
+      txt(tEls.frenzyL, ready ? 'FRENESÍ' : frenzyTimer > 0 ? 'ACTIVO' : Math.floor(frenzy) + '%');
+      let near = false;
+      for (const it of pickups) { if (it.type !== 'adrenaline' && Math.hypot(it.x - p.x, it.y - p.y) < 45) { near = true; break; } }
+      flag(tBtn.pickup, 'hidden-btn', !near);
+      flag(tBtn.pickup, 'ready', near);
+      const sg = p.activeWeapon === 'shotgun', loaded = sg ? p.shotgunAmmo : p.ak47Ammo;
+      txt(tEls.wName, sg ? 'ESCOPETA' : 'AK-47');
+      txt(tEls.wAmmo, p.reloadTimer > 0 ? 'RECARGANDO' : (sg ? `${p.shotgunAmmo} / ${p.shotgunReserve}` : `${p.ak47Ammo} / ${p.ak47Reserve}`));
+      flag(tEls.wAmmo, 'ammo-critical', p.reloadTimer <= 0 && loaded <= 3);
+    }
+    const _updateHudTouch = updateHud;
+    updateHud = function () {
+      _updateHudTouch();
+      if (touchState.enabled && player) touchUiSync();
+    };
+    function syncTouchUiVisibility() {
+      tUI.classList.toggle('show', touchState.enabled && (gameState === 'PLAYING' || gameState === 'PAUSED'));
+    }
+    setInterval(syncTouchUiVisibility, 250);
+
+    // ---------- Detección de táctil y entradas de ratón emuladas ----------
+    function setTouchMode(on) {
+      if (touchState.enabled === on) return;
+      touchState.enabled = on; touchMode = on;
+      document.body.classList.toggle('touch-mode', on);
+      refreshQualityLevel();
+      applyQuality();
+      syncTouchUiVisibility();
+    }
+    const _noteTouch = (e) => {
+      if (e.pointerType !== 'touch') return;
+      touchState.lastTouchTime = performance.now();
+      if (!touchState.enabled) setTouchMode(true);
+    };
+    window.addEventListener('pointerdown', _noteTouch, true);
+    window.addEventListener('pointerup', _noteTouch, true);
+    // Tras un toque el navegador puede emitir mousedown/mousemove falsos: se descartan antes de llegar a los manejadores originales.
+    ['mousedown', 'mouseup', 'mousemove'].forEach(type => {
+      window.addEventListener(type, (e) => {
+        if (touchState.enabled && performance.now() - touchState.lastTouchTime < 700) e.stopImmediatePropagation();
+      }, true);
+    });
+    // Sin zoom ni gestos del navegador durante la partida.
+    document.addEventListener('gesturestart', (e) => e.preventDefault());
+    document.addEventListener('touchmove', (e) => { if (gameState === 'PLAYING') e.preventDefault(); }, { passive: false });
+    window.addEventListener('pagehide', resetTouchControls);
+    window.addEventListener('blur', resetTouchControls);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) resetTouchControls(); });
+
+    // Envuelve funciones del motor para limpiar los controles en cada cambio de estado.
+    const _initGameTouch = initGame;
+    initGame = function () {
+      _initGameTouch.apply(this, arguments);
+      resetTouchControls();
+      touchState.runActive = touchState.enabled;
+      touchState.aimX = 1; touchState.aimY = 0; touchState.aimMag = 0.6; touchState.aimTouched = false;
+      _aqAcc = 0; _aqN = 0; _aqLow = 0; _aqWarm = 0;
+      syncTouchUiVisibility();
+      checkOrientation();
+    };
+    const _pauseGameTouch = pauseGame;
+    pauseGame = function () { _pauseGameTouch.apply(this, arguments); resetTouchControls(); };
+    const _endGameTouch = endGame;
+    endGame = function () { _endGameTouch.apply(this, arguments); resetTouchControls(); syncTouchUiVisibility(); };
+
+    // ---------- Orientación ----------
+    let rotateDismissed = false;
+    function checkOrientation() {
+      const hint = document.getElementById('rotate-hint');
+      const portrait = touchState.enabled && VIEW_H > VIEW_W * 1.05;
+      if (portrait && !rotateDismissed && gameState === 'PLAYING') { pauseGame(); hint.classList.remove('hidden-overlay'); }
+      else if (!portrait || rotateDismissed) hint.classList.add('hidden-overlay');
+    }
+    window.addEventListener('resize', checkOrientation);
+    document.getElementById('btn-rotate-ignore').addEventListener('click', () => { rotateDismissed = true; checkOrientation(); });
+
+    // Pantalla completa + bloqueo horizontal al empezar (Android); iPhone lo ignora sin errores.
+    document.getElementById('btn-start').addEventListener('click', () => {
+      if (!touchState.enabled) return;
+      try {
+        const el = document.documentElement;
+        const req = el.requestFullscreen || el.webkitRequestFullscreen;
+        const lock = () => { try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {}); } catch (_) {} };
+        if (req && !(document.fullscreenElement || document.webkitFullscreenElement)) {
+          const pr = req.call(el);
+          if (pr && pr.then) pr.then(lock).catch(() => {}); else lock();
+        } else lock();
+      } catch (_) {}
+    });
+
+    // ---------- Calidad gráfica (Auto / Alta / Media / Baja) ----------
+    function defaultAutoLevel() {
+      if (!touchState.enabled) return 2; // PC: todos los efectos, como el original
+      const mem = navigator.deviceMemory || 4, cores = navigator.hardwareConcurrency || 4;
+      return (mem <= 3 || cores <= 4) ? 0 : 1;
+    }
+    function refreshQualityLevel() {
+      qualityLevel = qualityMode === 'auto' ? defaultAutoLevel() : ({ alta: 2, media: 1, baja: 0 })[qualityMode];
+    }
+    function updateQualityLabel() {
+      const b = document.getElementById('btn-quality');
+      if (b) b.textContent = qualityMode === 'auto' ? `CALIDAD: AUTO (${Q.name})` : `CALIDAD: ${Q.name}`;
+    }
+    function applyQuality() {
+      Q = QUALITY_PRESETS[qualityLevel];
+      document.body.classList.toggle('q-low', qualityLevel === 0);
+      resizeCanvas();
+      resizeLight();
+      updateQualityLabel();
+    }
+    function setQualityMode(mode) {
+      qualityMode = mode;
+      try { localStorage.setItem('l4d2d_quality', mode); } catch (_) {}
+      refreshQualityLevel();
+      applyQuality();
+    }
+    document.getElementById('btn-quality').addEventListener('click', () => {
+      const order = ['auto', 'alta', 'media', 'baja'];
+      setQualityMode(order[(order.indexOf(qualityMode) + 1) % order.length]);
+    });
+    // Medidor de FPS real: en modo Auto (solo táctil) baja un nivel si el promedio de 2 s queda por debajo de 40 FPS dos veces seguidas.
+    let _aqAcc = 0, _aqN = 0, _aqLow = 0, _aqWarm = 0, measuredFps = 0;
+    function autoQualitySample(dt) {
+      if (dt > 250) return;                         // pausas, cambios de pestaña
+      if (_aqWarm < 180) { _aqWarm++; return; }     // ~3 s de calentamiento al empezar
+      _aqAcc += dt; _aqN++;
+      if (_aqAcc < 2000) return;
+      measuredFps = _aqN * 1000 / _aqAcc; _aqAcc = 0; _aqN = 0;
+      if (qualityMode !== 'auto' || !touchState.enabled) return;
+      if (measuredFps < 40 && qualityLevel > 0) {
+        if (++_aqLow >= 2) {
+          _aqLow = 0; qualityLevel--; applyQuality();
+          announce('CALIDAD: ' + Q.name, '#9ca3af', 'AJUSTE AUTOMÁTICO POR RENDIMIENTO', 70);
+        }
+      } else _aqLow = 0;
+    }
+
+    // ---------- Arranque ----------
+    (function initTouchModule() {
+      try { const s = localStorage.getItem('l4d2d_quality'); if (['auto', 'alta', 'media', 'baja'].includes(s)) qualityMode = s; } catch (_) {}
+      touchUiReady = true;
+      const coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+      if (coarse) setTouchMode(true);
+      else { refreshQualityLevel(); applyQuality(); }
+      layoutTouchUi();
+    })();
 
     requestAnimationFrame(gameLoop);
   </script>
